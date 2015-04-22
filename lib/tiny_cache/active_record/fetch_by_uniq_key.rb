@@ -28,7 +28,7 @@ module TinyCache
         # 根据cache_key获取id
         if iid = TinyCache.cache_store.read(uniq_cache_key)
           begin
-            self.find iid
+            self.tiny_cache_find_by_id iid
           ensure ::ActiveRecord::RecordNotFound
             nil
           end

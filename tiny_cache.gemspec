@@ -5,7 +5,7 @@ require "tiny_cache/version"
 
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
-  s.name        = "tiny_cache"
+  s.name        = "tiny-cache"
   s.version     = TinyCache::VERSION
   s.authors     = ["happy"]
   s.email       = ["andywang7259@gmail.com"]
