@@ -21,13 +21,17 @@ module TinyCache
             hitted_ids = records_from_cache.map{|key, _| key.split("/")[2].to_i}
             missed_ids = ids.map{|x| x.to_i} - hitted_ids
 
-            ::TinyCache::Config.logger.info "missed ids -> #{missed_ids.inspect} | hitted ids -> #{hitted_ids.inspect}"
+            ::TinyCache::Config.logger.debug " -> tiny cache records missed ids -> #{missed_ids.inspect} | hitted ids -> #{hitted_ids.inspect}"
 
             if missed_ids.empty?
               RecordMarshal.load_multi(records_from_cache.values)
             else
               records_from_db = records_for_without_tiny_cache(missed_ids)
-              records_from_db.map{|record| write_cache(record); record} + RecordMarshal.load_multi(records_from_cache.values)
+
+              records_from_db.map{|record| 
+                write_cache(record)
+                record
+              } + RecordMarshal.load_multi(records_from_cache.values)
             end
           end
 

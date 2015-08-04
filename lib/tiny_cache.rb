@@ -60,11 +60,15 @@ module TinyCache
       end
 
       def read_tiny_cache(id)
-        RecordMarshal.load(TinyCache.cache_store.read(tiny_cache_key(id))) if self.tiny_cache_enabled?
+        logger.debug " -> tiny cache read model: #{tiny_cache_key(id)}"
+
+        RecordMarshal.load(::TinyCache.cache_store.read(tiny_cache_key(id))) if self.tiny_cache_enabled?
       end
 
       def expire_tiny_cache(id)
-        TinyCache.cache_store.delete(tiny_cache_key(id)) if self.tiny_cache_enabled?
+        logger.debug " -> tiny cache delete model: #{tiny_cache_key(id)}"
+
+        ::TinyCache.cache_store.delete(tiny_cache_key(id)) if self.tiny_cache_enabled?
       end
     end
 
@@ -73,12 +77,19 @@ module TinyCache
     end
 
     def expire_tiny_cache
-      TinyCache.cache_store.delete(tiny_cache_key) if self.class.tiny_cache_enabled?
+      logger.debug " -> tiny cache delete model: #{tiny_cache_key}"
+
+      ::TinyCache.cache_store.delete(tiny_cache_key) if self.class.tiny_cache_enabled?
     end
 
     def write_tiny_cache
       if self.class.tiny_cache_enabled?
-        TinyCache.cache_store.write(tiny_cache_key, RecordMarshal.dump(self), :expires_in => self.class.tiny_cache_options[:expires_in])
+        logger.debug " -> tiny cache write model: #{tiny_cache_key}"
+
+        ::TinyCache.cache_store.write(
+          tiny_cache_key, RecordMarshal.dump(self),
+          :expires_in => self.class.tiny_cache_options[:expires_in]
+        )
       end
     end
 

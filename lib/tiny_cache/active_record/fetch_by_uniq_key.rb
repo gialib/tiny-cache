@@ -4,10 +4,16 @@ module TinyCache
     module FetchByUniqKey
       def fetch_by_uniq_keys(where_values)
         cache_key = cache_uniq_key(where_values)
+
         if _id = TinyCache.cache_store.read(cache_key)
+          logger.debug " -> tiny cache read fetch_by_uniq_keys: #{cache_key}"
+
           self.find(_id) rescue nil
         else
           record = self.where(where_values).first
+
+          logger.debug " -> tiny cache read fetch_by_uniq_keys miss will write: #{cache_key}"
+
           record.tap{|record| TinyCache.cache_store.write(cache_key, record.id)} if record
         end
       end
