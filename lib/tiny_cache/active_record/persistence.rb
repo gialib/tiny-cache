@@ -17,11 +17,12 @@ module TinyCache
       end
 
       def reload_with_tiny_cache(options = nil)
-        reload_without_tiny_cache(options).tap{expire_tiny_cache}
+        expire_tiny_cache
+        reload_without_tiny_cache(options)
       end
 
-      def touch_with_tiny_cache(name = nil)
-        touch_without_tiny_cache(name).tap{update_tiny_cache}
+      def touch_with_tiny_cache(*names)
+        touch_without_tiny_cache(*names).tap{update_tiny_cache}
       end
     end
   end

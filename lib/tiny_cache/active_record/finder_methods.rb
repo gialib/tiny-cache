@@ -1,32 +1,15 @@
 # -*- encoding : utf-8 -*-
-require "#{File.dirname(__FILE__)}/../arel/wheres"
-
 module TinyCache
   module ActiveRecord
     module FinderMethods
       extend ActiveSupport::Concern
 
       included do
-        class_eval do
-          alias_method_chain :find_one, :tiny_cache
-          alias_method_chain :find_by_attributes, :tiny_cache
-        end
+        alias_method_chain :find_one, :tiny_cache
       end
 
-      # TODO:
-      def find_by_attributes(match, attributes, *args)
-        conditions = Hash[attributes.map {|a| [a, args[attributes.index(a)]]}]
-        result = where(conditions).send(match.finder)
-
-        if match.bang? && result.nil?
-          raise RecordNotFound, "Couldn't find #{@klass.name} with #{conditions.to_a.collect {|p| p.join(' = ')}.join(', ')}"
-        else
-          yield(result) if block_given?
-          result
-        end
-      end
-
-      # TODO fetch multi ids
+      # TODO find_some
+      # https://github.com/rails/rails/blob/master/activerecord/lib/active_record/relation/finder_methods.rb#L289-L309
       #
       # Cacheable:
       #
@@ -44,19 +27,10 @@ module TinyCache
 
         id = id.id if ActiveRecord::Base === id
 
-        # if ::ActiveRecord::IdentityMap.enabled? && cachable? && record = from_identity_map(id)
-        #   return record
-        # end
-
         if cachable?
-          if record = @klass.read_tiny_cache(id)
-            return record 
-          end
-        end
-
-        if cachable_without_conditions?
-          if record = @klass.read_tiny_cache(id)
-            return record if where_match_with_cache?(where_values, record)
+          record = @klass.read_tiny_cache(id)
+          if record
+            return record if where_values.blank? || where_values_match_cache?(record)
           end
         end
 
@@ -65,54 +39,22 @@ module TinyCache
         record
       end
 
-      # TODO cache find_or_create_by_id
-      def find_by_attributes_with_tiny_cache(match, attributes, *args)
-        return find_by_attributes_without_tiny_cache(match, attributes, *args) unless tiny_cache_enabled?
-        return find_by_attributes_without_tiny_cache(match, attributes, *args) unless select_all_column?
-
-        conditions = Hash[attributes.map {|a| [a, args[attributes.index(a)]]}]
-
-        if conditions.has_key?("id")
-          result = wrap_bang(match.bang?) do
-            if conditions.size == 1
-              find_one_with_tiny_cache(conditions["id"])
-            else
-              where(conditions.except("id")).find_one_with_tiny_cache(conditions["id"])
-            end
-          end
-
-          yield(result) if block_given? #edge rails do this bug rails3.1.0 not
-
-          return result
-        end
-
-        find_by_attributes_without_tiny_cache(match, attributes, *args)
-      end
-
-      private
-
-      def wrap_bang(bang)
-        bang ? yield : (yield rescue nil)
-      end
+    private
 
       def cachable?
-        where_values.blank? &&
-          limit_one? && order_values.blank? &&
-          includes_values.blank? && preload_values.blank? &&
-          readonly_value.nil? && joins_values.blank? && !@klass.locking_enabled?
-      end
-
-      def cachable_without_conditions?
         limit_one? && order_values.blank? &&
           includes_values.blank? && preload_values.blank? &&
-          readonly_value.nil? && joins_values.blank? && !@klass.locking_enabled?
+          readonly_value.nil? && joins_values.blank? && !@klass.locking_enabled? &&
+          where_values.all? { |where_value| where_value.is_a?(::Arel::Nodes::Equality) }
       end
 
-      def where_match_with_cache?(where_values, cache_record)
-        condition = TinyCache::Arel::Wheres.new(where_values)
-        return false unless condition.all_equality?
-        condition.extract_pairs.all? do |pair|
-          cache_record.read_attribute(pair[:left]) == pair[:right]
+      def where_values_match_cache?(record)
+        where_values_hash.all? do |key, value|
+          if value.is_a?(Array)
+            value.include?(record.read_attribute(key))
+          else
+            record.read_attribute(key) == value
+          end
         end
       end
 
@@ -123,10 +65,6 @@ module TinyCache
       def select_all_column?
         select_values.blank?
       end
-
-      # def from_identity_map(id)
-      #   ::ActiveRecord::IdentityMap.get(@klass, id)
-      # end
     end
   end
 end

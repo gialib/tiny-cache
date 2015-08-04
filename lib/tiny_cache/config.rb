@@ -6,18 +6,17 @@ module TinyCache
     attr_accessor :cache_store, :logger, :cache_key_prefix
 
     def cache_store
-      @cache_store ||= ::Rails.cache if defined?(::Rails)
+      @cache_store ||= Rails.cache if defined?(Rails)
       @cache_store
     end
 
     def logger
-      @logger ||= ::Rails.logger if defined?(::Rails)
-      @logger ||= ::Logger.new(STDOUT)
+      @logger ||= Rails.logger if defined?(Rails)
+      @logger ||= Logger.new(STDOUT)
     end
 
     def cache_key_prefix
-      @cache_key_prefix ||= 'tiny_cache'
+      @cache_key_prefix ||= 'tiny-cache_'
     end
   end
 end
-

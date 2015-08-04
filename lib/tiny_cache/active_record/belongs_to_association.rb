@@ -10,10 +10,6 @@ module TinyCache
           end
         end
 
-        def association_class
-          @reflection.klass
-        end
-
         def find_target_with_tiny_cache
           return find_target_without_tiny_cache unless klass.tiny_cache_enabled?
           cache_record = klass.read_tiny_cache(tiny_cache_key)

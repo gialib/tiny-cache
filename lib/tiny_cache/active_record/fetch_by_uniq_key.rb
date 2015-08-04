@@ -2,52 +2,38 @@
 module TinyCache
   module ActiveRecord
     module FetchByUniqKey
-      def tiny_cache_find_by_id id
-        begin
-          record = read_tiny_cache(id)
-          record = self.find_by_id(id) if record.nil?
-          record.write_tiny_cache if record
-          record
-        ensure ::ActiveRecord::RecordNotFound
-          nil
-        end
-      end
-
-      def tiny_cache_find_by_id! id
-        tiny_cache_find_by_id(id) || raise(::ActiveRecord::RecordNotFound)
-      end
-
-      #
-      # 用来根据属性进行查询缓存, 一般适合是唯一不变的条件
-      # eg:
-      #   1. topic.tiny_cache_find_by :uid => 1, :category_id => 2
-      #
-      def tiny_cache_find_by conditions={}
-        uniq_cache_key = tiny_cache_uniq_key(conditions)
-
-        # 根据cache_key获取id
-        if iid = TinyCache.cache_store.read(uniq_cache_key)
-          begin
-            self.tiny_cache_find_by_id iid
-          ensure ::ActiveRecord::RecordNotFound
-            nil
-          end
+      def fetch_by_uniq_keys(where_values)
+        cache_key = cache_uniq_key(where_values)
+        if _id = TinyCache.cache_store.read(cache_key)
+          self.find(_id) rescue nil
         else
-          record = self.where(conditions).first
-          record.tap do |record|
-            TinyCache.cache_store.write(uniq_cache_key, record.id)
-          end if record
+          record = self.where(where_values).first
+          record.tap{|record| TinyCache.cache_store.write(cache_key, record.id)} if record
         end
       end
+      
+      def fetch_by_uniq_keys!(where_values)
+        fetch_by_uniq_keys(where_values) || raise(::ActiveRecord::RecordNotFound)
+      end
+      
+      def fetch_by_uniq_key(value, uniq_key_name)
+        # puts "[Deprecated] will remove in the future, use fetch_by_uniq_keys method instead."
+        fetch_by_uniq_keys(uniq_key_name => value)
+      end
 
-      def tiny_cache_find_by! conditions={}
-        tiny_cache_find_by(conditions) || raise(::ActiveRecord::RecordNotFound)
+      def fetch_by_uniq_key!(value, uniq_key_name)
+        # puts "[Deprecated] will remove in the future, use fetch_by_uniq_keys! method instead."
+        fetch_by_uniq_key(value, uniq_key_name) || raise(::ActiveRecord::RecordNotFound)
       end
 
       private
-
-      def tiny_cache_uniq_key conditions={}
-        "#{::TinyCache::Config.cache_key_prefix}/model_uniq_keys/#{self.name}/#{conditions.sort.inspect}"
+      
+      def cache_uniq_key(where_values)
+        ext_key = where_values.collect { |k,v|
+          v = Digest::MD5.hexdigest(v) if v && v.size >= 32
+          [k,v].join("_")
+        }.join(",")
+        "uniq_key_#{self.name}_#{ext_key}"
       end
     end
   end
