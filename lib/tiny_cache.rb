@@ -52,7 +52,7 @@ module TinyCache
       end
 
       def cache_version
-        tiny_cache_options[:version]
+        (tiny_cache_options || {})[:version]
       end
 
       def tiny_cache_key(id)
