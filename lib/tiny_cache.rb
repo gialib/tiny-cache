@@ -23,8 +23,13 @@ module TinyCache
         @tiny_cache_options = options
         @tiny_cache_options[:expires_in] ||= 1.week
         @tiny_cache_options[:version] ||= 0
-        relation.class.send :include, TinyCache::ActiveRecord::FinderMethods
-        include TinyCache::ActiveRecord::Core if /^4\.2\./.match(::ActiveRecord.version.version)
+
+        begin
+          relation.class.send :include, ::TinyCache::ActiveRecord::FinderMethods
+          include ::TinyCache::ActiveRecord::Core if /^4\.2\./.match(::ActiveRecord.version.version)
+        rescue Exception => e
+          ::Rails.logger.error e.message
+        end
       end
 
       def tiny_cache_enabled?
