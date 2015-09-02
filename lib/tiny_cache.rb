@@ -21,7 +21,7 @@ module TinyCache
       def acts_as_tiny_cached(options = {})
         @tiny_cache_enabled = true
         @tiny_cache_options = options
-        @tiny_cache_options[:expires_in] ||= 1.week
+        @tiny_cache_options[:expires_in] ||= 4.weeks
         @tiny_cache_options[:version] ||= 0
 
         begin

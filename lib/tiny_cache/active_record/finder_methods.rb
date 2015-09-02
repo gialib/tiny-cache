@@ -13,7 +13,7 @@ module TinyCache
       #
       # Cacheable:
       #
-      #     current_user.articles.where(:status => 1).visiable.find(params[:id])
+      #     current_user.articles.where(:status => 1).visible.find(params[:id])
       #
       # Uncacheable:
       #
