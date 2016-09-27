@@ -31,17 +31,13 @@ module TinyCache
               records_from_db = records_for_without_tiny_cache(missed_ids)
 
               records_from_db.map{|record| 
-                write_cache(record)
+                record.write_tiny_cache
                 record
               } + RecordMarshal.load_multi(records_from_cache.values)
             end
           end
 
           private
-
-          def write_cache(record)
-            record.write_tiny_cache
-          end
         end
       end
     end

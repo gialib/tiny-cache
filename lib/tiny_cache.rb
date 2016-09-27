@@ -26,7 +26,7 @@ module TinyCache
 
         begin
           relation.class.send :include, ::TinyCache::ActiveRecord::FinderMethods
-          include ::TinyCache::ActiveRecord::Core if /^4\.2\./.match(::ActiveRecord.version.version)
+          include ::TinyCache::ActiveRecord::Core
         rescue Exception => e
           ::Rails.logger.error e.message
         end

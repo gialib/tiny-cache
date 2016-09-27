@@ -16,7 +16,7 @@ module TinyCache
     end
 
     def cache_key_prefix
-      @cache_key_prefix ||= 'tiny-cache_'
+      @cache_key_prefix ||= 'tiny-cache'
     end
   end
 end
